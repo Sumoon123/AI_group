@@ -11,6 +11,7 @@ const path = require('path');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
+// 在server.js中确保端口设置如下
 const PORT = process.env.PORT || 3001;
 
 // 配置文件上传
