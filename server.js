@@ -11,30 +11,19 @@ const path = require('path');
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const app = express();
-// 在server.js中确保端口设置如下
+// Vercel 环境下不需要显式监听端口
 const PORT = process.env.PORT || 3001;
 
 // 配置文件上传
 const upload = multer({ 
-  storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      const uploadDir = 'uploads';
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir);
-      }
-      cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname);
-    }
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 } // 限制10MB
 });
 
-// 确保上传目录存在
-if (!fs.existsSync('uploads')) {
-  fs.mkdirSync('uploads');
-}
+// 移除创建目录的代码，因为 Vercel 环境中不能写入文件系统
+// if (!fs.existsSync('uploads')) {
+//   fs.mkdirSync('uploads');
+// }
 
 // 添加路径日志中间件
 app.use((req, res, next) => {
@@ -229,11 +218,11 @@ app.post('/api/questions/:id/upload', upload.single('file'), (req, res) => {
     return res.status(400).json({ success: false, message: '未上传文件' });
   }
 
-  console.log('文件信息:', req.file);
+  console.log('文件信息:', req.file.originalname, req.file.size);
 
   try {
-    // 读取Excel文件
-    const workbook = XLSX.readFile(req.file.path);
+    // 从内存中读取 Excel 文件
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     
@@ -270,9 +259,9 @@ app.post('/api/questions/:id/upload', upload.single('file'), (req, res) => {
     questions[id].responses = newResponses;
     
     // 清除上传的临时文件
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('删除临时文件失败:', err);
-    });
+    // fs.unlink(req.file.path, (err) => {
+    //   if (err) console.error('删除临时文件失败:', err);
+    // });
     
     res.json({ 
       success: true, 
@@ -283,11 +272,11 @@ app.post('/api/questions/:id/upload', upload.single('file'), (req, res) => {
     console.error('处理Excel文件出错:', error);
     
     // 清除上传的临时文件
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('删除临时文件失败:', err);
-      });
-    }
+    // if (req.file && fs.existsSync(req.file.path)) {
+    //   fs.unlink(req.file.path, (err) => {
+    //     if (err) console.error('删除临时文件失败:', err);
+    //   });
+    // }
     
     res.status(500).json({ 
       success: false, 
@@ -661,6 +650,14 @@ app.get('/', (req, res) => {
   res.redirect('/index.html');
 });
 
-app.listen(PORT, () => {
-  console.log(`服务器运行在 http://localhost:${PORT}`);
-});
+// 修改服务器启动方式，适应 Vercel 环境
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`服务器运行在 http://localhost:${PORT}`);
+  });
+} else {
+  console.log('在生产环境中运行，由 Vercel 管理服务器');
+}
+
+// 为 Vercel Serverless Functions 导出应用
+module.exports = app;
