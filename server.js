@@ -38,7 +38,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 app.use(bodyParser.json());
-app.use(express.static('public'));
+// 修改静态文件服务配置
+app.use(express.static(path.join(__dirname, 'public')));
 
 // 添加 CSP 中间件
 app.use((req, res, next) => {
@@ -50,7 +51,15 @@ app.use((req, res, next) => {
 });
 
 // 内存数据存储（生产环境应使用数据库）
-const questions = {};
+let questions = {};
+
+// 添加数据持久化
+if (process.env.VERCEL) {
+  // Vercel 环境下使用全局变量
+  global.questions = global.questions || {};
+  questions = global.questions;
+  console.log('Vercel环境: 使用全局变量存储数据');
+}
 
 // 创建新问题
 app.post('/api/questions', (req, res) => {
@@ -63,6 +72,8 @@ app.post('/api/questions', (req, res) => {
     responses: [],
     createdAt: new Date()
   };
+  
+  console.log('创建新问题:', questionId, '当前问题数:', Object.keys(questions).length);
   
   // 使用请求头中的 host
   const host = req.headers.host;
@@ -134,8 +145,16 @@ app.get('/api/questions/:id/download', (req, res) => {
 app.post('/api/responses', (req, res) => {
   const { questionId, answer, nickname } = req.body;  // 添加nickname
   
+  console.log('收到回答:', questionId, '当前问题数:', Object.keys(questions).length);
+  
   if (!questions[questionId]) {
+    console.log('问题不存在:', questionId);
     return res.status(404).json({ success: false, message: '问题不存在' });
+  }
+  
+  // 确保 responses 数组存在
+  if (!questions[questionId].responses) {
+    questions[questionId].responses = [];
   }
   
   // 添加回答
@@ -144,6 +163,12 @@ app.post('/api/responses', (req, res) => {
     nickname,  // 保存昵称
     submittedAt: new Date()
   });
+  
+  console.log('保存回答后的问题数据:', 
+    questionId, 
+    '回答数量:', 
+    questions[questionId].responses.length
+  );
   
   res.json({ success: true });
 });
@@ -661,3 +686,13 @@ if (process.env.NODE_ENV !== 'production') {
 
 // 为 Vercel Serverless Functions 导出应用
 module.exports = app;
+
+// 在文件末尾添加错误处理中间件
+app.use((err, req, res, next) => {
+  console.error('服务器错误:', err);
+  res.status(500).json({
+    success: false,
+    message: '服务器内部错误',
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
