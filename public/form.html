@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问答表单</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        .question {
+            font-size: 1.2rem;
+            font-weight: 500;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="text"], 
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+        .btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>问题回答</h1>
+        <div id="questionContainer" class="question">
+            正在加载问题...
+        </div>
+        
+        <form id="answerForm">
+            <div class="form-group">
+                <label for="nickname">你的昵称：</label>
+                <input type="text" id="nickname" required>
+            </div>
+            <div class="form-group">
+                <label for="answer">你的回答：</label>
+                <textarea id="answer" rows="3" required></textarea>
+            </div>
+            
+            <button type="submit" class="btn">提交回答</button>
+        </form>
+        
+        <div id="successMessage" class="success-message">
+            感谢您的回答！
+        </div>
+        
+        <div id="errorMessage" class="error-message">
+            提交失败，请重试。
+        </div>
+    </div>
+
+    <script>
+        // 获取URL参数
+        function getUrlParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+        
+        // 获取问题ID
+        const questionId = getUrlParam('id');
+        
+        if (!questionId) {
+            document.getElementById('questionContainer').textContent = '无效的问题链接';
+            document.getElementById('answerForm').style.display = 'none';
+        } else {
+            // 加载问题
+            fetch(`/api/questions/${questionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('questionContainer').textContent = data.question.question;
+                    } else {
+                        document.getElementById('questionContainer').textContent = '问题加载失败';
+                        document.getElementById('answerForm').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('questionContainer').textContent = '无法连接到服务器';
+                    document.getElementById('answerForm').style.display = 'none';
+                });
+        }
+        
+        // 提交表单
+        document.getElementById('answerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const answer = document.getElementById('answer').value.trim();
+            const nickname = document.getElementById('nickname').value.trim();
+            
+            if (!answer || !nickname) {
+                return;
+            }
+            
+            // 提交回答
+            fetch('/api/responses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    questionId: questionId,
+                    answer: answer,
+                    nickname: nickname
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('answerForm').style.display = 'none';
+                    document.getElementById('successMessage').style.display = 'block';
+                } else {
+                    document.getElementById('errorMessage').textContent = data.message || '提交失败，请重试。';
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('errorMessage').textContent = '连接服务器失败，请重试。';
+                document.getElementById('errorMessage').style.display = 'block';
+            });
+        });
+    </script>
+</body>
+</html>

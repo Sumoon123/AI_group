@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI趣味问答分组</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 添加Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 添加Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        :root {
+            --primary: #5E6AD2;
+            --primary-hover: #4F58C4;
+            --success: #3CB371;
+            --success-hover: #2E8B57;
+            --background: #F7F8FA;
+            --card-bg: #FFFFFF;
+            --text: #1A1D23;
+            --text-secondary: #6B7280;
+            --border: #E5E7EB;
+            --shadow: rgba(0, 0, 0, 0.05);
+            --shadow-hover: rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: 0;
+            transition: var(--transition);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            animation: fadeIn 0.8s ease;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            animation: slideUp 0.5s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .question-container {
+            font-size: 1.125rem;
+            font-weight: 500;
+            background-color: var(--background);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        #currentQuestion {
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 0.5rem;
+            word-break: break-word;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            box-shadow: 0 1px 2px var(--shadow);
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px var(--shadow-hover);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+        }
+
+        .btn-success:hover {
+            background-color: var(--success-hover);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+
+        #qrcode {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .results-container {
+            margin-top: 2.5rem;
+            animation: fadeIn 0.8s ease;
+        }
+
+        .chart-container {
+            height: 400px;
+            margin: 2rem 0;
+            padding: 1rem;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        .instructions {
+            background-color: rgba(94, 106, 210, 0.05);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+            border: 1px solid rgba(94, 106, 210, 0.1);
+        }
+
+        .instructions h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .instructions ol, .instructions ul {
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions li {
+            margin-bottom: 0.5rem;
+        }
+
+        .instructions ul {
+            list-style-type: circle;
+        }
+
+        .form-url {
+            word-break: break-all;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            background: var(--background);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        input[type="number"] {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            width: 80px;
+            transition: var(--transition);
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
+        }
+
+        input[type="file"] {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: var(--background);
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--border);
+            width: 100%;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(94, 106, 210, 0.2);
+        }
+
+        .groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+            padding: 1.25rem;
+            background: var(--background);
+            border-radius: var(--radius);
+            min-height: 200px;
+            border: 1px solid var(--border);
+        }
+
+        .group-bubble {
+            background: var(--card-bg);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            box-shadow: 0 2px 8px var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            animation: fadeIn 0.6s ease;
+        }
+
+        .group-bubble:hover {
+            box-shadow: 0 4px 15px var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .group-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .member-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .member-tag {
+            background: var(--background);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+        }
+
+        .member-tag:hover {
+            background: rgba(94, 106, 210, 0.05);
+        }
+
+        .member-tag strong {
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-tag p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            word-break: break-word;
+        }
+
+        .feature-tag {
+            background: rgba(94, 106, 210, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            background: var(--background);
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .status-indicator i {
+            font-size: 0.8rem;
+        }
+
+        /* 动画效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .form-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .groups-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+            
+            .instructions {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI趣味问答分组</h1>
+            <p>输入问题，通过二维码收集回答，并进行智能分组分析</p>
+        </header>
+
+        <div class="card">
+            <h2><i class="fas fa-question-circle"></i> 创建问题</h2>
+            <textarea id="questionInput" rows="3" placeholder="输入您的问题..."></textarea>
+            <div class="text-center">
+                <button id="generateQuestion" class="btn">
+                    <i class="fas fa-plus-circle"></i> 创建问题
+                </button>
+            </div>
+        </div>
+
+        <div class="card question-container">
+            <h2><i class="fas fa-clipboard-list"></i> 当前问题</h2>
+            <p id="currentQuestion">尚未创建问题</p>
+        </div>
+
+        <div class="card qr-container" id="qrSection" style="display: none;">
+            <h2><i class="fas fa-qrcode"></i> 扫描二维码回答问题</h2>
+            <div id="qrcode"></div>
+            <p>用手机扫描此二维码，填写你的答案</p>
+            <p id="formUrl" class="form-url"></p>
+        </div>
+
+        <div class="card">
+            <h2><i class="fas fa-cog"></i> 分组设置</h2>
+            <div class="form-group">
+                <label for="groupCount">分组数量：</label>
+                <input type="number" id="groupCount" min="2" max="100" value="3">
+                <button id="saveSettings" class="btn">保存设置</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>收集的回答</h2>
+            <p id="responseCount">尚未收到回答</p>
+            <button id="refreshResponses" class="btn">刷新回答</button>
+            <button id="analyzeResults" class="btn btn-success" disabled>分析结果</button>
+            <!-- 添加下载按钮 -->
+            <button id="downloadResponses" class="btn" disabled>下载回答</button>
+        </div>
+
+        <!-- 添加上传Excel功能模块 -->
+        <div class="card">
+            <h2>上传回答数据</h2>
+            <p>上传Excel文件，第一列为昵称，第二列为回答内容</p>
+            <input type="file" id="excelFileInput" accept=".xlsx, .xls" />
+            <button id="uploadExcel" class="btn">上传并分析</button>
+        </div>
+
+        <!-- 删除重复的结果区域，使用这个结构 -->
+        <div class="results-container" id="resultsSection" style="display: none;">
+            <h2>分析结果</h2>
+            <div id="groupsContainer" class="groups-container"></div>
+            <div class="chart-container">
+                <canvas id="resultsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- 添加/更新样式 -->
+        <style>
+            .groups-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 20px;
+                padding: 20px;
+                background: #f8f9fa;
+                border-radius: 12px;
+                min-height: 200px;
+            }
+            
+            .group-bubble {
+                flex: 1;
+                min-width: 250px;
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                margin-bottom: 20px;
+            }
+            
+            .member-list {
+                margin-top: 20px;
+            }
+            
+            .member-tag {
+                background: #f1f1f1;
+                padding: 10px;
+                margin: 5px 0;
+                border-radius: 8px;
+            }
+        </style>
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>输入您的问题并点击"创建问题"</li>
+                <li>设置分组数量（2-100之间）并点击"保存设置"</li>
+                <li>扫描生成的二维码，在手机上填写答案</li>
+                <li>点击"刷新回答"查看最新提交情况</li>
+                <li>收集多个回答后，您可以：
+                    <ul>
+                        <li>点击"分析结果"：系统将基于回答内容的相似性进行智能分组</li>
+                        <li>点击"下载回答"：将所有回答导出为Excel文件</li>
+                    </ul>
+                </li>
+                <li>如果已有Excel格式的回答数据：
+                    <ul>
+                        <li>准备Excel文件：第一列为昵称，第二列为回答内容</li>
+                        <li>点击"选择文件"选择Excel文件</li>
+                        <li>点击"上传并分析"导入数据</li>
+                    </ul>
+                </li>
+            </ol>
+            <p>注意：每个分组至少需要1个回答，请确保回答总数不少于设置的分组数量。</p>
+        </div>
+    </div>
+
+    <script>
+        // 当前问题和回答存储
+        let currentQuestion = "";
+        let responses = [];
+        let currentQuestionId = null;
+        let formUrl = "";
+
+        // 创建新问题
+        document.getElementById('generateQuestion').addEventListener('click', function() {
+            const questionText = document.getElementById('questionInput').value.trim();
+            
+            if (!questionText) {
+                alert('请输入问题内容');
+                return;
+            }
+            
+            // 向API发送创建问题请求
+            fetch('/api/questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    questionText: questionText
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentQuestionId = data.questionId;
+                    currentQuestion = questionText;
+                    formUrl = data.formUrl;
+                    
+                    // 更新UI
+                    document.getElementById('currentQuestion').textContent = currentQuestion;
+                    document.getElementById('formUrl').textContent = formUrl;
+                    document.getElementById('responseCount').textContent = '尚未收到回答';
+                    document.getElementById('analyzeResults').disabled = true;
+                    document.getElementById('resultsSection').style.display = 'none';
+                    
+                    // 生成二维码
+                    generateQRCode(formUrl);
+                    
+                    // 显示二维码区域
+                    document.getElementById('qrSection').style.display = 'block';
+                    
+                    // 清空回答
+                    responses = [];
+                } else {
+                    alert('创建问题失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('连接服务器失败，请重试');
+            });
+        });
+
+        // 生成二维码
+        function generateQRCode(url) {
+            const qrCodeElement = document.getElementById('qrcode');
+            qrCodeElement.innerHTML = '';  // 清除现有二维码
+            
+            // 使用qrcodejs库生成二维码
+            new QRCode(qrCodeElement, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        // 刷新回答
+        document.getElementById('refreshResponses').addEventListener('click', function() {
+            if (!currentQuestionId) {
+                alert('请先创建问题');
+                return;
+            }
+            
+            fetch(`/api/questions/${currentQuestionId}/responses`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        responses = data.responses;  // 保存完整的响应数据
+                        document.getElementById('responseCount').textContent = `已收到 ${responses.length} 个回答`;
+                        
+                        if (responses.length > 0) {
+                            document.getElementById('analyzeResults').disabled = false;
+                        }
+                    } else {
+                        alert('获取回答失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('连接服务器失败，请重试');
+                });
+        });
+
+        // 分析结果按钮点击事件
+        document.getElementById('analyzeResults').addEventListener('click', function() {
+            if (!currentQuestionId) {
+                alert('请先创建问题');
+                return;
+            }
+            
+            const groupCount = parseInt(document.getElementById('groupCount').value) || 3;
+            
+            // 修改为 POST 请求，并添加请求头和请求体
+            fetch(`/api/questions/${currentQuestionId}/analyze`, {
+                method: 'POST',  // 改为 POST 请求
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ groupCount })  // 添加请求体
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`请求失败 (${response.status}): ${text || '未知错误'}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    displayGroups(data.groups);
+                    displayChartResults(data.groups);
+                    document.getElementById('resultsSection').style.display = 'block';
+                } else {
+                    alert(data.message || '分析失败');
+                    document.getElementById('resultsSection').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('分析失败：' + error.message);
+            });
+        });
+
+        // 添加新的图表显示函数
+
+        function displayChartResults(groups) {
+            // 准备图表数据
+            const labels = groups.map(group => group.name || '未命名组');
+            const data = groups.map(group => (group.members ? group.members.length : 0));
+            
+            // 生成随机颜色，但使用更友好的颜色
+            const colors = [
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(255, 159, 64, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(153, 102, 255, 0.7)',
+                'rgba(255, 206, 86, 0.7)'
+            ];
+            
+            // 确保颜色数量足够
+            while (colors.length < groups.length) {
+                colors.push(`rgba(${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, ${Math.floor(Math.random() * 200)}, 0.7)`);
+            }
+            
+            // 绘制图表
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            if (window.chart) {
+                window.chart.destroy(); // 销毁现有图表
+            }
+            window.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '回答数量',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 显示分组结果函数修改
+        function displayGroups(groups) {
+            const container = document.getElementById('groupsContainer');
+            container.innerHTML = '';
+            
+            groups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'group-bubble';
+                
+                // 添加组名
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'group-name';
+                titleDiv.style.fontSize = '1.2em';
+                titleDiv.style.fontWeight = 'bold';
+                titleDiv.style.marginBottom = '15px';
+                
+                // 添加一个表情符号到组名前面
+                const emoji = ['✨', '💡', '🎯', '🌟', '🔍'][Math.floor(Math.random() * 5)];
+                titleDiv.textContent = `${group.name || '未命名组'} ${emoji}`;
+                
+                groupDiv.appendChild(titleDiv);
+                
+                // 添加成员列表
+                const membersDiv = document.createElement('div');
+                membersDiv.className = 'member-list';
+                
+                if (group.members && group.members.length > 0) {
+                    group.members.forEach(member => {
+                        const memberDiv = document.createElement('div');
+                        memberDiv.className = 'member-tag';
+                        memberDiv.innerHTML = `
+                            <strong>${member.nickname || '匿名'}</strong>
+                            <p>${member.answer}</p>
+                        `;
+                        membersDiv.appendChild(memberDiv);
+                    });
+                } else {
+                    // 如果没有成员，显示提示
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.textContent = '该组暂无成员';
+                    emptyDiv.style.fontStyle = 'italic';
+                    emptyDiv.style.color = '#999';
+                    membersDiv.appendChild(emptyDiv);
+                }
+                
+                groupDiv.appendChild(membersDiv);
+                container.appendChild(groupDiv);
+            });
+        }
+
+        // 添加新的样式
+        const newStyles = `
+            .group-features {
+                margin: 10px 0;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .feature-tag {
+                background: #e3f2fd;
+                color: #1976d2;
+                padding: 4px 12px;
+                border-radius: 16px;
+                font-size: 0.9em;
+            }
+        `;
+
+        // 将新样式添加到现有的 style 标签中
+        document.querySelector('style').textContent += newStyles;
+
+        // 添加下载回答功能
+        document.getElementById('downloadResponses').addEventListener('click', function() {
+            if (!currentQuestionId || responses.length === 0) {
+                alert('没有可下载的回答');
+                return;
+            }
+            
+            fetch(`/api/questions/${currentQuestionId}/download`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `问题回答_${new Date().toISOString().slice(0,10)}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('下载失败，请重试');
+                });
+        });
+
+        // 添加上传Excel功能
+        // 修改上传Excel功能的代码
+        document.getElementById('uploadExcel').addEventListener('click', function() {
+            const fileInput = document.getElementById('excelFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请选择Excel文件');
+                return;
+            }
+            
+            if (!currentQuestionId) {
+                alert('请先创建问题');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // 显示上传中提示
+            alert('正在上传文件，请稍候...');
+            
+            // 打印请求信息以便调试
+            console.log('上传文件到:', `/api/questions/${currentQuestionId}/upload`);
+            console.log('文件名:', file.name);
+            
+            fetch(`/api/questions/${currentQuestionId}/upload`, {
+                method: 'POST',
+                body: formData,
+                // 不要设置 Content-Type，让浏览器自动设置带有 boundary 的 multipart/form-data
+            })
+            .then(response => {
+                console.log('上传响应状态:', response.status);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        console.error('上传错误响应:', text);
+                        throw new Error(`上传失败 (${response.status}): ${text || '未知错误'}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(`成功上传 ${data.count} 条回答`);
+                    // 刷新回答数量显示
+                    document.getElementById('responseCount').textContent = `已收到 ${data.count} 个回答`;
+                    responses = data.responses;
+                    
+                    if (responses.length > 0) {
+                        document.getElementById('analyzeResults').disabled = false;
+                        document.getElementById('downloadResponses').disabled = false;
+                    }
+                } else {
+                    alert('上传失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('上传错误:', error);
+                alert('上传失败，请重试: ' + error.message);
+            });
+        });
+
+        // 修改刷新回答事件，同时启用下载按钮
+        document.getElementById('refreshResponses').addEventListener('click', function() {
+            if (!currentQuestionId) {
+                alert('请先创建问题');
+                return;
+            }
+            
+            fetch(`/api/questions/${currentQuestionId}/responses`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        responses = data.responses;  // 保存完整的响应数据
+                        document.getElementById('responseCount').textContent = `已收到 ${responses.length} 个回答`;
+                        
+                        if (responses.length > 0) {
+                            document.getElementById('analyzeResults').disabled = false;
+                            document.getElementById('downloadResponses').disabled = false;
+                        }
+                    } else {
+                        alert('获取回答失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('连接服务器失败，请重试');
+                });
+        });
+
+        // 添加保存设置事件监听器
+        document.getElementById('saveSettings').addEventListener('click', function() {
+            if (!currentQuestionId) {
+                alert('请先创建问题');
+                return;
+            }
+            
+            const groupCount = parseInt(document.getElementById('groupCount').value) || 3;
+            
+            fetch(`/api/questions/${currentQuestionId}/settings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ groupCount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('设置已保存');
+                } else {
+                    alert('保存设置失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('连接服务器失败，请重试');
+            });
+        });
+    </script>
+</body>
+</html>
